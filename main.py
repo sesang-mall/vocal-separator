@@ -337,10 +337,16 @@ class App(ctk.CTk, TkinterDnD.DnDWrapper):
 
     def _on_drop(self, event):
         self._reset_drop_zone()
-        raw = event.data.strip()
-        paths = re.findall(r'\{([^}]+)\}', raw) if raw.startswith("{") else raw.split()
+        # tk.splitlist()는 TCL 리스트 파서 — {path with spaces} 와 path_no_spaces 를 모두 정확히 처리
+        try:
+            paths = self.tk.splitlist(event.data)
+        except Exception:
+            raw = event.data.strip()
+            paths = re.findall(r'\{([^}]+)\}', raw) if '{' in raw else raw.split()
         for p in paths:
-            self._add_to_queue(p, "file", Path(p).name)
+            p = p.strip()
+            if p:
+                self._add_to_queue(p, "file", Path(p).name)
 
     def _reset_drop_zone(self):
         self.drop_zone.configure(fg_color=DROP_BG, border_color=BORDER)
