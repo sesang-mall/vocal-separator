@@ -1,9 +1,9 @@
 @echo off
-rem Create an "App Launcher" shortcut on the desktop.
+rem Create "App Launcher" and "App Launcher Stop" shortcuts on the desktop.
 set "HERE=%~dp0"
 powershell -NoProfile -Command ^
-  "$s=(New-Object -ComObject WScript.Shell).CreateShortcut([Environment]::GetFolderPath('Desktop')+'\App Launcher.lnk');" ^
-  "$s.TargetPath='%HERE%launcher.bat';$s.WorkingDirectory='%HERE%';" ^
-  "$s.IconLocation='%HERE%launcher_icon.ico';$s.WindowStyle=7;$s.Save()"
-echo Desktop shortcut created.
+  "$d=[Environment]::GetFolderPath('Desktop'); $w=New-Object -ComObject WScript.Shell;" ^
+  "$s=$w.CreateShortcut($d+'\App Launcher.lnk');$s.TargetPath='%HERE%launcher.bat';$s.WorkingDirectory='%HERE%';$s.IconLocation='%HERE%launcher_icon.ico';$s.WindowStyle=7;$s.Save();" ^
+  "$s=$w.CreateShortcut($d+'\App Launcher Stop.lnk');$s.TargetPath='%HERE%stop_launcher.bat';$s.WorkingDirectory='%HERE%';$s.IconLocation='%HERE%launcher_stop_icon.ico';$s.WindowStyle=7;$s.Save()"
+echo Desktop shortcuts created.
 pause

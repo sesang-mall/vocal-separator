@@ -34,3 +34,20 @@ for i, col in enumerate(colors):
 img.resize((256, 256), Image.LANCZOS).save(
     OUT / 'launcher_icon.ico', sizes=[(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)])
 img.resize((512, 512), Image.LANCZOS).save(OUT / 'launcher_icon.png')
+
+# 종료 바로가기용 아이콘: 붉은 배경 + 흰 정지(■) 기호
+stop = Image.new('RGBA', (S, S))
+spx = stop.load()
+stop_top, stop_bot = (120, 30, 44), (170, 48, 60)
+for y in range(S):
+    t = y / (S - 1)
+    c = tuple(int(stop_top[i] + (stop_bot[i] - stop_top[i]) * t) for i in range(3)) + (255,)
+    for x in range(S):
+        spx[x, y] = c
+stop_img = Image.new('RGBA', (S, S), (0, 0, 0, 0))
+stop_img.paste(stop, (0, 0), mask)
+side = 380
+c0 = (S - side) // 2
+ImageDraw.Draw(stop_img).rounded_rectangle((c0, c0, c0 + side, c0 + side), radius=70, fill=(255, 255, 255))
+stop_img.resize((256, 256), Image.LANCZOS).save(
+    OUT / 'launcher_stop_icon.ico', sizes=[(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)])
