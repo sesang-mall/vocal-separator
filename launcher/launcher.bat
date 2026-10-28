@@ -1,5 +1,5 @@
 @echo off
-rem Start the App Launcher server (localhost:8888) if needed, then open it in Chrome.
+rem Start the App Launcher server (localhost:8888) if needed, then open it in Edge.
 set "APP_DIR=D:\Claude_Dev\app-launcher"
 set "URL=http://localhost:8888/"
 
@@ -19,14 +19,11 @@ curl -s -o nul %URL%
 if errorlevel 1 goto wait
 
 :open
-start "" chrome "%URL%" 2>nul && exit /b 0
-if exist "%ProgramFiles%\Google\Chrome\Application\chrome.exe" (
-    start "" "%ProgramFiles%\Google\Chrome\Application\chrome.exe" "%URL%" & exit /b 0
+start "" msedge "%URL%" 2>nul && exit /b 0
+if exist "%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" (
+    start "" "%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" "%URL%" & exit /b 0
 )
-if exist "%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe" (
-    start "" "%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe" "%URL%" & exit /b 0
-)
-if exist "%LocalAppData%\Google\Chrome\Application\chrome.exe" (
-    start "" "%LocalAppData%\Google\Chrome\Application\chrome.exe" "%URL%" & exit /b 0
+if exist "%ProgramFiles%\Microsoft\Edge\Application\msedge.exe" (
+    start "" "%ProgramFiles%\Microsoft\Edge\Application\msedge.exe" "%URL%" & exit /b 0
 )
 start "" "%URL%"
