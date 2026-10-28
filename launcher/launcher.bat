@@ -7,8 +7,8 @@ call :listening
 if not errorlevel 1 goto open
 
 cd /d "%APP_DIR%" || (echo Folder not found: %APP_DIR% & pause & exit /b 1)
-where pythonw >nul 2>&1
-if errorlevel 1 (start "" /min python server.py) else (start "" pythonw server.py)
+rem Use python (not pythonw): pythonw has no stderr, so the HTTP server fails to log and drops every response.
+powershell -NoProfile -Command "Start-Process python -ArgumentList 'server.py' -WorkingDirectory '%APP_DIR%' -WindowStyle Hidden"
 
 set /a TRIES=0
 :wait
