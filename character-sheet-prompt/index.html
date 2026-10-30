@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Custom Character Sheet Prompt Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <style>
+        body { background-color: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        .spinner { border: 3px solid rgba(255,255,255,0.1); border-left-color: #3b82f6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .is-hidden { display: none !important; }
+        .drop-active { border-color: #3b82f6 !important; background-color: #1e293b !important; }
+        #viewOptions label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+    </style>
+</head>
+<body class="min-h-screen p-4 sm:p-8 flex flex-col items-center">
+    <h1 class="text-3xl font-bold mb-2 text-blue-400">CUSTOM PROMPT GENERATOR</h1>
+    <p class="mb-6 text-slate-400 text-sm">뷰 구성과 의상 컨셉을 직접 설정하세요.</p>
+
+    <div class="w-full max-w-6xl bg-slate-800 p-6 rounded-xl shadow-2xl flex flex-col gap-6 border border-slate-700">
+        <!-- API 설정 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="md:col-span-2">
+                <label for="apiKey" class="block text-xs mb-2 text-slate-400 font-bold">GEMINI API KEY</label>
+                <input type="password" id="apiKey" autocomplete="off" class="w-full p-2 bg-slate-900 rounded border border-slate-600 text-white focus:outline-none focus:border-blue-500">
+                <label class="flex items-center gap-2 mt-2 text-xs text-slate-400 cursor-pointer">
+                    <input type="checkbox" id="rememberKey"> 이 브라우저에 키 기억하기 (공용 PC에서는 사용 금지)
+                </label>
+            </div>
+            <div>
+                <label for="modelName" class="block text-xs mb-2 text-slate-400 font-bold">MODEL</label>
+                <input type="text" id="modelName" list="modelList" value="gemini-3.5-flash" class="w-full p-2 bg-slate-900 rounded border border-slate-600 text-white focus:outline-none focus:border-blue-500">
+                <datalist id="modelList">
+                    <option value="gemini-3.5-flash"></option>
+                    <option value="gemini-2.5-flash"></option>
+                    <option value="gemini-2.5-pro"></option>
+                </datalist>
+            </div>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-6">
+            <!-- Left: Settings & Upload -->
+            <div class="flex-1 flex flex-col gap-4 w-full lg:w-1/2">
+                <div class="bg-slate-900 p-4 rounded-lg border border-slate-700">
+                    <h3 class="text-sm font-bold text-blue-400 mb-3">1. 시트 구성 선택</h3>
+                    <div class="grid grid-cols-2 gap-2 mb-4 text-sm" id="viewOptions">
+                        <label><input type="checkbox" value="front view" checked> 정면 (Front)</label>
+                        <label><input type="checkbox" value="side view" checked> 측면 (Side)</label>
+                        <label><input type="checkbox" value="back view" checked> 후면 (Back)</label>
+                        <label><input type="checkbox" value="close-up portrait"> 클로즈업 (Close-up)</label>
+                        <label><input type="checkbox" value="dynamic pose"> 역동적 포즈 (Dynamic)</label>
+                    </div>
+
+                    <h3 class="text-sm font-bold text-blue-400 mb-3">2. 의상 컨셉 설정 (선택사항)</h3>
+                    <div class="flex flex-col gap-2 text-sm">
+                        <input type="text" id="topClothing" placeholder="상의 (예: 흰색 실크 블라우스)" class="p-2 bg-slate-800 rounded border border-slate-600 text-white">
+                        <input type="text" id="bottomClothing" placeholder="하의 (예: 검은색 가죽 바지)" class="p-2 bg-slate-800 rounded border border-slate-600 text-white">
+                        <input type="text" id="shoesClothing" placeholder="신발 (예: 갈색 롱부츠)" class="p-2 bg-slate-800 rounded border border-slate-600 text-white">
+                        <input type="text" id="extraClothing" placeholder="기타/액세서리 (예: 은빛 목걸이, 망토)" class="p-2 bg-slate-800 rounded border border-slate-600 text-white">
+                    </div>
+
+                    <h3 class="text-sm font-bold text-blue-400 mt-4 mb-3">3. 추가 요청 (선택사항)</h3>
+                    <input type="text" id="extraNotes" placeholder="예: 애니메이션 스타일, 중립적인 표정, 손에 검 없음" class="w-full p-2 text-sm bg-slate-800 rounded border border-slate-600 text-white">
+                </div>
+
+                <!-- Upload Panel -->
+                <input type="file" id="imageInput" accept="image/*" class="text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
+                <div id="dropZone" class="w-full h-64 bg-slate-900 rounded overflow-hidden flex items-center justify-center border border-dashed border-slate-700 relative">
+                    <img id="imagePreview" alt="업로드한 이미지 미리보기" class="max-w-full max-h-full is-hidden">
+                    <span id="placeholderText" class="text-slate-500 text-center px-4">이미지를 선택하거나 드래그 앤 드롭 / 붙여넣기(Ctrl+V)</span>
+                </div>
+
+                <button id="generateBtn" class="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded transition flex justify-center items-center gap-2 is-hidden">
+                    <span id="generateLabel">Generate Custom Prompt</span>
+                    <div id="loading" class="spinner is-hidden"></div>
+                </button>
+                <p id="errorBox" role="alert" class="text-sm text-red-300 bg-red-950/50 border border-red-800 rounded p-3 is-hidden"></p>
+            </div>
+
+            <!-- Right: Result -->
+            <div class="flex-1 flex flex-col gap-4 w-full lg:w-1/2 is-hidden" id="resultArea">
+                <div class="bg-slate-900 p-4 rounded-lg border border-slate-700">
+                    <h2 class="text-xs font-bold text-blue-400 mb-2">분석 요약</h2>
+                    <p id="charDescription" class="text-sm text-slate-300"></p>
+                </div>
+
+                <div class="bg-slate-900 p-4 rounded-lg border border-slate-700 flex-1 flex flex-col">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-xs font-bold text-emerald-400">맞춤형 영문 프롬프트</h2>
+                        <button id="copyBtn" class="text-xs bg-slate-700 hover:bg-slate-600 text-white py-1 px-3 rounded">복사</button>
+                    </div>
+                    <!-- 결과를 다듬어 쓸 수 있도록 편집 가능 -->
+                    <textarea id="promptText" class="w-full flex-1 bg-slate-950 p-3 rounded border border-slate-700 text-emerald-300 text-sm focus:outline-none focus:border-emerald-500 resize-y min-h-[200px]"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const $ = (id) => document.getElementById(id);
+        const imageInput = $('imageInput');
+        const imagePreview = $('imagePreview');
+        const placeholderText = $('placeholderText');
+        const dropZone = $('dropZone');
+        const generateBtn = $('generateBtn');
+        const generateLabel = $('generateLabel');
+        const loading = $('loading');
+        const resultArea = $('resultArea');
+        const errorBox = $('errorBox');
+        const apiKeyInput = $('apiKey');
+        const rememberKey = $('rememberKey');
+        const modelInput = $('modelName');
+        const copyBtn = $('copyBtn');
+        const promptText = $('promptText');
+
+        const MAX_FILE_BYTES = 10 * 1024 * 1024;
+        const REQUEST_TIMEOUT_MS = 60000;
+        const RETRY_STATUS = new Set([429, 500, 503]);
+
+        let cropper = null;
+        let objectUrl = null;
+        let abortController = null;
+
+        const show = (el, visible) => el.classList.toggle('is-hidden', !visible);
+        const showError = (msg) => { errorBox.textContent = msg; show(errorBox, !!msg); };
+
+        // ---- 저장된 설정 복원 (localStorage 가 막힌 환경 대비) ----
+        function storageGet(key) { try { return localStorage.getItem(key); } catch { return null; } }
+        function storageSet(key, value) { try { localStorage.setItem(key, value); } catch {} }
+        function storageRemove(key) { try { localStorage.removeItem(key); } catch {} }
+
+        const savedKey = storageGet('cspg.apiKey');
+        if (savedKey) { apiKeyInput.value = savedKey; rememberKey.checked = true; }
+        const savedModel = storageGet('cspg.model');
+        if (savedModel) modelInput.value = savedModel;
+
+        // ---- 이미지 로드 (파일 선택 / 드래그 앤 드롭 / 붙여넣기 공용) ----
+        function loadImageFile(file) {
+            if (!file) return;
+            if (!file.type.startsWith('image/')) { showError('이미지 파일만 업로드할 수 있습니다.'); return; }
+            if (file.size > MAX_FILE_BYTES) { showError('파일이 너무 큽니다. 10MB 이하의 이미지를 사용하세요.'); return; }
+            showError('');
+
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
+            objectUrl = URL.createObjectURL(file);
+
+            // Cropper 는 이미지가 완전히 로드된 뒤에 초기화해야 크기 계산이 정확하다.
+            imagePreview.onload = () => {
+                if (cropper) cropper.destroy();
+                cropper = new Cropper(imagePreview, { viewMode: 1, background: false, autoCropArea: 0.9 });
+                show(generateBtn, true);
+            };
+            imagePreview.src = objectUrl;
+            show(imagePreview, true);
+            show(placeholderText, false);
+            show(resultArea, false);
+        }
+
+        imageInput.addEventListener('change', (e) => loadImageFile(e.target.files[0]));
+
+        ['dragenter', 'dragover'].forEach(ev => dropZone.addEventListener(ev, (e) => {
+            e.preventDefault(); dropZone.classList.add('drop-active');
+        }));
+        ['dragleave', 'drop'].forEach(ev => dropZone.addEventListener(ev, (e) => {
+            e.preventDefault(); dropZone.classList.remove('drop-active');
+        }));
+        dropZone.addEventListener('drop', (e) => loadImageFile(e.dataTransfer.files[0]));
+
+        document.addEventListener('paste', (e) => {
+            const item = Array.from(e.clipboardData?.items || []).find(i => i.type.startsWith('image/'));
+            if (item) loadImageFile(item.getAsFile());
+        });
+
+        // ---- 복사 ----
+        copyBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(promptText.value);
+            } catch {
+                promptText.select();
+                document.execCommand('copy');
+            }
+            copyBtn.innerText = '완료!';
+            setTimeout(() => { copyBtn.innerText = '복사'; }, 2000);
+        });
+
+        // ---- 프롬프트 지시문 구성 ----
+        function buildInstruction() {
+            const selectedViews = Array.from(document.querySelectorAll('#viewOptions input:checked'))
+                .map(cb => cb.value).join(', ');
+
+            const parts = [
+                ['top', $('topClothing').value.trim()],
+                ['bottom', $('bottomClothing').value.trim()],
+                ['shoes', $('shoesClothing').value.trim()],
+                ['accessories', $('extraClothing').value.trim()],
+            ].filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`);
+
+            const clothing = parts.length
+                ? `The character MUST be wearing: ${parts.join(', ')}. Keep every other clothing item consistent across all views.`
+                : 'Describe and use the clothing seen in the image.';
+
+            const notes = $('extraNotes').value.trim();
+
+            return `Analyze the image. Return a JSON object with: "description" (brief Korean summary of the character) and "prompt" (English).
+For the "prompt": Start with "A character reference sheet, turnaround: ${selectedViews} of...".
+Keep the character's face, hair, body proportions and colors identical in every view.
+Clothing instruction: ${clothing}
+${notes ? `Additional requirements: ${notes}\n` : ''}Keep descriptions concise. End the prompt with "white background, 8k".`;
+        }
+
+        // ---- API 호출 (타임아웃 + 일시 오류 1회 재시도) ----
+        async function callGemini(model, apiKey, body, signal) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+            for (let attempt = 0; attempt < 2; attempt++) {
+                const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+                    body: JSON.stringify(body),
+                    signal: AbortSignal.any([signal, timeout]),
+                });
+                if (res.ok) return res.json();
+                if (RETRY_STATUS.has(res.status) && attempt === 0) {
+                    await new Promise(r => setTimeout(r, 2000));
+                    continue;
+                }
+                let message = `HTTP ${res.status}`;
+                try { message = (await res.json()).error?.message || message; } catch {}
+                if (res.status === 404) message += ' (모델 이름을 확인하세요)';
+                if (res.status === 400 || res.status === 403) message += ' (API 키/요청을 확인하세요)';
+                throw new Error(message);
+            }
+        }
+
+        function parseModelJson(data) {
+            const candidate = data.candidates?.[0];
+            if (!candidate) {
+                const reason = data.promptFeedback?.blockReason;
+                throw new Error(reason ? `요청이 차단되었습니다: ${reason}` : '응답에 결과가 없습니다.');
+            }
+            const text = candidate.content?.parts?.map(p => p.text || '').join('') || '';
+            if (!text) throw new Error(`빈 응답입니다 (finishReason: ${candidate.finishReason || '알 수 없음'}).`);
+            const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+            const result = JSON.parse(cleaned);
+            if (typeof result.prompt !== 'string' || !result.prompt) throw new Error('응답에 prompt 필드가 없습니다.');
+            return result;
+        }
+
+        function setBusy(busy) {
+            generateBtn.disabled = false;
+            show(loading, busy);
+            generateLabel.textContent = busy ? '취소' : 'Generate Custom Prompt';
+        }
+
+        generateBtn.addEventListener('click', async () => {
+            // 진행 중이면 취소 버튼으로 동작
+            if (abortController) { abortController.abort(); return; }
+
+            const apiKey = apiKeyInput.value.trim();
+            const model = modelInput.value.trim();
+            if (!apiKey) { showError('API 키를 입력하세요.'); apiKeyInput.focus(); return; }
+            if (!model) { showError('모델 이름을 입력하세요.'); modelInput.focus(); return; }
+            if (!cropper) return;
+            if (!document.querySelector('#viewOptions input:checked')) {
+                showError('시트 구성을 하나 이상 선택하세요.'); return;
+            }
+            showError('');
+
+            if (rememberKey.checked) storageSet('cspg.apiKey', apiKey); else storageRemove('cspg.apiKey');
+            storageSet('cspg.model', model);
+
+            // 투명 PNG 가 JPEG 변환 시 검게 나오지 않도록 흰 배경을 채운다.
+            const canvas = cropper.getCroppedCanvas({ maxWidth: 800, maxHeight: 800, fillColor: '#fff' });
+            if (!canvas) { showError('이미지 영역을 선택하세요.'); return; }
+            const base64Image = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
+
+            abortController = new AbortController();
+            setBusy(true);
+
+            try {
+                const data = await callGemini(model, apiKey, {
+                    contents: [{ parts: [
+                        { text: buildInstruction() },
+                        { inline_data: { mime_type: 'image/jpeg', data: base64Image } },
+                    ] }],
+                    generationConfig: {
+                        responseMimeType: 'application/json',
+                        responseSchema: {
+                            type: 'OBJECT',
+                            properties: {
+                                description: { type: 'STRING' },
+                                prompt: { type: 'STRING' },
+                            },
+                            required: ['description', 'prompt'],
+                        },
+                    },
+                }, abortController.signal);
+
+                const result = parseModelJson(data);
+                $('charDescription').innerText = result.description || '';
+                promptText.value = result.prompt;
+                show(resultArea, true);
+            } catch (error) {
+                console.error(error);
+                if (error.name === 'AbortError') showError('요청을 취소했습니다.');
+                else if (error.name === 'TimeoutError') showError('응답 시간이 초과되었습니다. 다시 시도하세요.');
+                else if (error instanceof SyntaxError) showError('응답을 JSON으로 해석하지 못했습니다. 다시 시도하세요.');
+                else showError(`오류 발생: ${error.message}`);
+            } finally {
+                abortController = null;
+                setBusy(false);
+            }
+        });
+    </script>
+</body>
+</html>
