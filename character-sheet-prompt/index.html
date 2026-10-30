@@ -13,6 +13,12 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .is-hidden { display: none !important; }
         .drop-active { border-color: #3b82f6 !important; background-color: #1e293b !important; }
+        .layout-card { background: #0f172a; border: 2px solid #334155; border-radius: 0.5rem; padding: 0.4rem; cursor: pointer; text-align: center; color: #cbd5e1; font-size: 0.7rem; }
+        .layout-card:hover { border-color: #64748b; }
+        .layout-card[aria-checked="true"] { border-color: #3b82f6; background: #172554; color: #fff; }
+        .layout-preview { display: flex; flex-direction: column; gap: 2px; height: 64px; margin-bottom: 0.3rem; }
+        .layout-row { display: flex; gap: 2px; min-height: 0; }
+        .layout-cell { flex: 1; border: 1.5px solid #3b82f6; border-radius: 2px; }
         #viewOptions label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
     </style>
 </head>
@@ -46,6 +52,8 @@
             <div class="flex-1 flex flex-col gap-4 w-full lg:w-1/2">
                 <div class="bg-slate-900 p-4 rounded-lg border border-slate-700">
                     <h3 class="text-sm font-bold text-blue-400 mb-3">1. 시트 구성 선택</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3" id="layoutPicker" role="radiogroup" aria-label="시트 레이아웃"></div>
+                    <p id="layoutHint" class="text-xs text-slate-500 mb-3"></p>
                     <div class="grid grid-cols-2 gap-2 mb-4 text-sm" id="viewOptions">
                         <label><input type="checkbox" value="front view" checked> 정면 (Front)</label>
                         <label><input type="checkbox" value="side view" checked> 측면 (Side)</label>
@@ -186,10 +194,101 @@
             setTimeout(() => { copyBtn.innerText = '복사'; }, 2000);
         });
 
+        // ---- 시트 레이아웃 프리셋 ----
+        // rows[].h: 행 높이 비율(미리보기용), rows[].label: 행 설명, cells[]: [한글 라벨, 영문 뷰]
+        const LAYOUTS = {
+            basic: {
+                name: '기본 3뷰',
+                hint: '전신 정면 / 측면 / 후면을 한 줄로 배치합니다.',
+                rows: [{ h: 1, label: 'full body', cells: [['정면', 'front view'], ['측면', 'side view'], ['후면', 'back view']] }],
+            },
+            turnaround4: {
+                name: '전신 4뷰',
+                hint: '전신 정면 / 좌측 / 우측 / 후면을 한 줄로 배치합니다.',
+                rows: [{ h: 1, label: 'full body', cells: [['정면', 'front view'], ['좌측', 'left side view'], ['우측', 'right side view'], ['후면', 'back view']] }],
+            },
+            faceBody: {
+                name: '얼굴 4 + 전신 4',
+                hint: '위 줄: 얼굴(정면/좌측/우측/뒷면), 아래 줄: 전신(정면/좌측/후면/역동적 포즈)',
+                rows: [
+                    { h: 1, label: 'face close-ups', cells: [['정면 얼굴', 'front view face'], ['좌측면 얼굴', 'left profile face'], ['우측면 얼굴', 'right profile face'], ['뒷면', 'back of the head']] },
+                    { h: 2, label: 'full body', cells: [['정면 전신', 'front view full body'], ['좌측면 전신', 'left side view full body'], ['후면 전신', 'back view full body'], ['역동적 포즈', 'dynamic pose full body']] },
+                ],
+            },
+            expressions: {
+                name: '표정 시트 6종',
+                hint: '같은 얼굴의 표정 6가지를 2행 3열로 배치합니다.',
+                rows: [
+                    { h: 1, label: 'face expressions', cells: [['무표정', 'neutral expression'], ['미소', 'smiling'], ['화남', 'angry']] },
+                    { h: 1, label: 'face expressions', cells: [['슬픔', 'sad'], ['놀람', 'surprised'], ['부끄러움', 'embarrassed']] },
+                ],
+            },
+            custom: {
+                name: '직접 선택',
+                hint: '아래 체크박스로 필요한 뷰를 직접 고릅니다.',
+                rows: [{ h: 1, label: '', cells: [['?', '']] }],
+            },
+        };
+        let currentLayout = LAYOUTS[storageGet('cspg.layout')] ? storageGet('cspg.layout') : 'basic';
+
+        function renderLayoutPicker() {
+            const picker = $('layoutPicker');
+            picker.innerHTML = '';
+            for (const [id, layout] of Object.entries(LAYOUTS)) {
+                const card = document.createElement('div');
+                card.className = 'layout-card';
+                card.setAttribute('role', 'radio');
+                card.tabIndex = 0;
+                card.setAttribute('aria-checked', String(id === currentLayout));
+
+                const preview = document.createElement('div');
+                preview.className = 'layout-preview';
+                if (id === 'custom') {
+                    preview.style.cssText = 'align-items:center;justify-content:center;font-size:1.5rem;color:#64748b';
+                    preview.textContent = '☑';
+                } else {
+                    for (const row of layout.rows) {
+                        const r = document.createElement('div');
+                        r.className = 'layout-row';
+                        r.style.flex = String(row.h);
+                        row.cells.forEach(() => { const c = document.createElement('div'); c.className = 'layout-cell'; r.appendChild(c); });
+                        preview.appendChild(r);
+                    }
+                }
+                card.append(preview, document.createTextNode(layout.name));
+
+                const select = () => selectLayout(id);
+                card.addEventListener('click', select);
+                card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(); } });
+                picker.appendChild(card);
+            }
+            $('layoutHint').textContent = LAYOUTS[currentLayout].hint;
+            show($('viewOptions'), currentLayout === 'custom');
+        }
+
+        function selectLayout(id) {
+            currentLayout = id;
+            storageSet('cspg.layout', id);
+            renderLayoutPicker();
+        }
+
+        function describeLayout(layout) {
+            const ordinal = ['Top', 'Second', 'Third', 'Fourth'];
+            const rows = layout.rows.map((row, i) => {
+                const where = layout.rows.length === 1 ? 'Single row' : `${ordinal[i] || `Row ${i + 1}`} row`;
+                return `${where} (${row.label}, left to right): ${row.cells.map(c => c[1]).join(', ')}`;
+            });
+            const cols = Math.max(...layout.rows.map(r => r.cells.length));
+            return `${layout.rows.length} row x ${cols} column grid layout. ${rows.join('. ')}`;
+        }
+
+        renderLayoutPicker();
+
         // ---- 프롬프트 지시문 구성 ----
         function buildInstruction() {
-            const selectedViews = Array.from(document.querySelectorAll('#viewOptions input:checked'))
-                .map(cb => cb.value).join(', ');
+            const selectedViews = currentLayout === 'custom'
+                ? Array.from(document.querySelectorAll('#viewOptions input:checked')).map(cb => cb.value).join(', ')
+                : describeLayout(LAYOUTS[currentLayout]);
 
             const parts = [
                 ['top', $('topClothing').value.trim()],
@@ -205,7 +304,7 @@
             const notes = $('extraNotes').value.trim();
 
             return `Analyze the image. Return a JSON object with: "description" (brief Korean summary of the character) and "prompt" (English).
-For the "prompt": Start with "A character reference sheet, turnaround: ${selectedViews} of...".
+For the "prompt": Start with "A character reference sheet, ${currentLayout === 'custom' ? 'turnaround: ' : ''}${selectedViews}, of...". Every cell must show the same character, separated by thin border lines.
 Keep the character's face, hair, body proportions and colors identical in every view.
 Clothing instruction: ${clothing}
 ${notes ? `Additional requirements: ${notes}\n` : ''}Keep descriptions concise. End the prompt with "white background, 8k".`;
@@ -264,7 +363,7 @@ ${notes ? `Additional requirements: ${notes}\n` : ''}Keep descriptions concise. 
             if (!apiKey) { showError('API 키를 입력하세요.'); apiKeyInput.focus(); return; }
             if (!model) { showError('모델 이름을 입력하세요.'); modelInput.focus(); return; }
             if (!cropper) return;
-            if (!document.querySelector('#viewOptions input:checked')) {
+            if (currentLayout === 'custom' && !document.querySelector('#viewOptions input:checked')) {
                 showError('시트 구성을 하나 이상 선택하세요.'); return;
             }
             showError('');
