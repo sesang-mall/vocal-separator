@@ -11,6 +11,7 @@
         body { background-color: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', Tahoma, sans-serif; }
         .spinner { border: 3px solid rgba(255,255,255,0.1); border-left-color: #3b82f6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        input::placeholder, textarea::placeholder { color: #94a3b8; opacity: 1; }
         .is-hidden { display: none !important; }
         .drop-active { border-color: #3b82f6 !important; background-color: #1e293b !important; }
         .layout-card { background: #0f172a; border: 2px solid #334155; border-radius: 0.5rem; padding: 0.4rem; cursor: pointer; text-align: center; color: #cbd5e1; font-size: 0.7rem; }
@@ -215,12 +216,43 @@
                     { h: 2, label: 'full body', cells: [['정면 전신', 'front view full body'], ['좌측면 전신', 'left side view full body'], ['후면 전신', 'back view full body'], ['역동적 포즈', 'dynamic pose full body']] },
                 ],
             },
+            expressions4: {
+                name: '표정 시트 4종',
+                hint: '기본 표정 4가지를 한 줄로 배치합니다.',
+                rows: [{ h: 1, label: 'face expressions', cells: [['무표정', 'neutral expression'], ['미소', 'gentle smile'], ['화남', 'angry'], ['슬픔', 'sad']] }],
+            },
             expressions: {
                 name: '표정 시트 6종',
                 hint: '같은 얼굴의 표정 6가지를 2행 3열로 배치합니다.',
                 rows: [
                     { h: 1, label: 'face expressions', cells: [['무표정', 'neutral expression'], ['미소', 'smiling'], ['화남', 'angry']] },
                     { h: 1, label: 'face expressions', cells: [['슬픔', 'sad'], ['놀람', 'surprised'], ['부끄러움', 'embarrassed']] },
+                ],
+            },
+            expressions9: {
+                name: '표정 시트 9종',
+                hint: '표정 9가지를 3행 3열로 배치합니다.',
+                rows: [
+                    { h: 1, label: 'face expressions', cells: [['무표정', 'neutral expression'], ['미소', 'gentle smile'], ['크게 웃음', 'laughing']] },
+                    { h: 1, label: 'face expressions', cells: [['윙크', 'winking'], ['화남', 'angry'], ['슬픔/눈물', 'sad, teary eyes']] },
+                    { h: 1, label: 'face expressions', cells: [['놀람', 'surprised'], ['부끄러움', 'embarrassed, blushing'], ['졸림', 'sleepy']] },
+                ],
+            },
+            expressions12: {
+                name: '표정 시트 12종',
+                hint: '표정 12가지를 3행 4열로 배치합니다.',
+                rows: [
+                    { h: 1, label: 'face expressions', cells: [['무표정', 'neutral expression'], ['미소', 'gentle smile'], ['크게 웃음', 'laughing'], ['윙크', 'winking']] },
+                    { h: 1, label: 'face expressions', cells: [['화남', 'angry'], ['슬픔', 'sad'], ['울음', 'crying'], ['놀람', 'surprised']] },
+                    { h: 1, label: 'face expressions', cells: [['부끄러움', 'embarrassed, blushing'], ['졸림', 'sleepy'], ['못마땅함', 'disgusted'], ['장난스러움', 'smirking, mischievous']] },
+                ],
+            },
+            expressionsBody: {
+                name: '표정 4 + 상반신 3',
+                hint: '위 줄: 얼굴 표정 4종, 아래 줄: 상반신 정면/측면/후면',
+                rows: [
+                    { h: 1, label: 'face expressions', cells: [['무표정', 'neutral expression'], ['미소', 'smiling'], ['화남', 'angry'], ['슬픔', 'sad']] },
+                    { h: 2, label: 'upper body', cells: [['정면', 'front view upper body'], ['측면', 'side view upper body'], ['후면', 'back view upper body']] },
                 ],
             },
             custom: {
