@@ -1,0 +1,93 @@
+/* 레이아웃: 화면 높이를 꽉 채우는 한 화면 앱.
+   헤더(점수) → 타이머 → 보드(남는 공간 중앙) → 안내 한 줄.
+   보드는 가로·세로 둘 다 화면에 맞게 줄어들어 폰·태블릿·세로/가로 모두 스크롤 없이 보입니다. */
+:root{
+  --bg:#e8efe4; --panel:#f6faf3; --fg:#1d2b1a; --muted:#5c6e57; --line:#c9d6c3;
+  --apple:#d63a2f; --apple-hi:#ef6a5a; --leaf:#3f8a3a; --sel:#f2b526; --ok:#2f9e44;
+  --font-display:"Jua","Noto Sans KR",system-ui,sans-serif;
+  --font-body:"Noto Sans KR",system-ui,sans-serif;
+  --cols:17; --rows:10;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#142015; --panel:#1b2b1c; --fg:#e6f0e2; --muted:#92a58c; --line:#2f4630;
+  --apple:#e0483c; --apple-hi:#ff7a69; --leaf:#5fb35a; --sel:#f5c542; --ok:#4cc364; color-scheme:dark}}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  margin:0;background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;
+  overscroll-behavior:none;touch-action:manipulation;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+}
+.app{
+  height:100%;max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:10px;
+  padding-top:max(12px,env(safe-area-inset-top,0px));
+  padding-bottom:max(12px,env(safe-area-inset-bottom,0px));
+  padding-left:max(12px,env(safe-area-inset-left,0px));
+  padding-right:max(12px,env(safe-area-inset-right,0px));
+}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+h1{font-family:var(--font-display);font-weight:400;font-size:clamp(1.3rem,4vw,2.2rem);margin:0;line-height:1}
+h1 span{color:var(--apple)}
+.stats{display:flex;gap:clamp(12px,3vw,28px);font-variant-numeric:tabular-nums}
+.stat{display:flex;flex-direction:column;align-items:flex-end}
+.stat b{font-family:var(--font-display);font-weight:400;font-size:clamp(1.3rem,4vw,2rem);line-height:1}
+.stat small{color:var(--muted);font-size:.7rem;letter-spacing:.08em}
+
+.timer{height:8px;border-radius:4px;background:var(--line);overflow:hidden;flex:none}
+.timer i{display:block;height:100%;width:100%;background:var(--leaf);transform-origin:left;transform:scaleX(1)}
+.timer.low i{background:var(--apple)}
+
+/* 남는 세로 공간 안에서 17:10 비율을 유지하며 가능한 크게 */
+.stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;container-type:size}
+.boardbox{
+  position:relative;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px;
+  container-type:inline-size;
+  width:min(100cqw, calc(100cqh * var(--cols) / var(--rows)));
+  aspect-ratio:var(--cols) / var(--rows);
+}
+#board{
+  display:grid;width:100%;height:100%;gap:2px;touch-action:none;
+  grid-template-columns:repeat(var(--cols),1fr);grid-template-rows:repeat(var(--rows),1fr);
+}
+.cell{display:flex;align-items:center;justify-content:center;position:relative;border-radius:6px;min-width:0;min-height:0}
+.apple{
+  width:92%;height:92%;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;
+  background:radial-gradient(circle at 35% 30%,var(--apple-hi),var(--apple) 62%);
+  color:#fff;font-weight:700;font-size:calc(100cqw / var(--cols) * .5);line-height:1;
+  text-shadow:0 1px 1px rgba(0,0,0,.35);transition:transform .12s;
+}
+.apple::before{content:"";position:absolute;top:-6%;left:52%;width:28%;height:20%;background:var(--leaf);border-radius:0 100% 0 100%;transform:rotate(-15deg)}
+.cell.sel{background:color-mix(in srgb,var(--sel) 45%,transparent);outline:2px solid var(--sel)}
+.cell.sel.good{background:color-mix(in srgb,var(--ok) 45%,transparent);outline-color:var(--ok)}
+.cell.sel .apple{transform:scale(1.08)}
+.cell.gone .apple{display:none}
+.cell.pop .apple{display:flex;animation:pop .35s forwards}
+@keyframes pop{to{transform:scale(1.6);opacity:0}}
+
+.live{flex:none;min-height:1.6em;text-align:center;color:var(--muted);font-variant-numeric:tabular-nums}
+.live b{color:var(--fg)}
+.live .ok{color:var(--ok);font-weight:700}
+
+.overlay{
+  position:absolute;inset:0;border-radius:14px;background:color-mix(in srgb,var(--panel) 92%,transparent);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:16px;
+}
+.overlay[hidden]{display:none}
+.overlay h2{font-family:var(--font-display);font-weight:400;font-size:clamp(1.3rem,5vw,2rem);margin:0;text-wrap:balance}
+.overlay p{margin:0;color:var(--muted);max-width:36ch;line-height:1.55;font-size:clamp(.8rem,2.4vw,1rem)}
+button{
+  font:inherit;font-family:var(--font-display);font-size:1.2rem;background:var(--apple);color:#fff;border:0;
+  border-radius:999px;padding:12px 36px;min-height:48px;cursor:pointer;touch-action:manipulation;
+}
+button:hover{filter:brightness(1.08)}
+button:focus-visible{outline:3px solid var(--sel);outline-offset:2px}
+
+/* 가로로 누운 폰: 세로 공간이 부족하므로 헤더·안내를 더 작게 */
+@media (max-height:480px){
+  .app{gap:6px}
+  .overlay p{display:none}
+  .overlay{gap:8px}
+}
+@media (prefers-reduced-motion:reduce){.apple{transition:none}.cell.pop .apple{animation:none}}
