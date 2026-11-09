@@ -2,7 +2,7 @@
   'use strict';
 
   var COLS = 17, ROWS = 10, TIME = 120;   // 세로 화면에서는 10x17로 자동 전환
-  var TARGETS = [10, 20];           // 이 합이면 사라진다
+  var TARGETS = [10, 20, 30];           // 이 합이면 사라진다
 
   var board = document.getElementById('board');
   var scoreEl = document.getElementById('score');
@@ -137,7 +137,7 @@
       live.innerHTML = '합 <b>' + t.s + '</b> 성공! +' + t.n + '점';
       if (navigator.vibrate) { try { navigator.vibrate(15); } catch (x) {} }
     } else {
-      live.innerHTML = t.n ? '합이 ' + t.s + '이에요. 10이나 20이 필요합니다.' : '&nbsp;';
+      live.innerHTML = t.n ? '합이 ' + t.s + '이에요. 10, 20, 30 중 하나가 필요합니다.' : '&nbsp;';
     }
   }
 
